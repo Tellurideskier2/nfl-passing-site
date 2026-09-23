@@ -1,8 +1,14 @@
 {
+  "name": "nfl-passing-yards-edge-finder",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22 <25" },
   "scripts": {
-    "start": "node server.js"
+    "start": "node --env-file-if-exists=.env server.js",
+    "test": "node --test test/*.test.js",
+    "test:e2e": "node test/e2e.js",
+    "test:live-stats": "node test/live-stats.js"
   },
-  "dependencies": {
-    "express": "^4.18.2"
-  }
+  "devDependencies": { "playwright": "1.62.1" }
 }
