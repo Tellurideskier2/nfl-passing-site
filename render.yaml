@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: nfl-passing-site
+    runtime: node
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_VERSION
+        value: 24.19.0
+      - key: SPORTSGAMEODDS_API_KEY
+        sync: false
+      - key: SLATE_TIMEZONE
+        value: America/Denver
