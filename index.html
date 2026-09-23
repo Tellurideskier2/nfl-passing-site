@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NFL Passing Yards Edge Finder</title>
+  <style>
+    :root {
+      --bg: #020617;
+      --card: #0f172a;
+      --card2: #111827;
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --border: #334155;
+      --green: #22c55e;
+      --red: #ef4444;
+      --yellow: #facc15;
+      --blue: #38bdf8;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: radial-gradient(circle at top, #172554 0, #020617 45%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .wrap {
+      width: min(1400px, 96%);
+      margin: 0 auto;
+      padding: 28px 0 60px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(28px, 4vw, 48px);
+      letter-spacing: -1px;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      margin-top: 8px;
+      max-width: 900px;
+      line-height: 1.45;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 18px;
+      margin-top: 24px;
+    }
+
+    .card {
+      background: rgba(15, 23, 42, 0.92);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.28);
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      margin: 12px 0 5px;
+    }
+
+    input, select, button, textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 11px;
+      background: #020617;
+      color: var(--text);
+      font-size: 14px;
+      outline: none;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--blue);
+    }
+
+    .row2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .row3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+    }
+
+    button {
+      cursor: pointer;
+      border: 0;
+      font-weight: 700;
+      margin-top: 14px;
+    }
+
+    .primary {
+      background: linear-gradient(135deg, #2563eb, #06b6d4);
+      color: white;
+    }
+
+    .secondary {
+      background: #1e293b;
+      color: var(--text);
+    }
+
+    .danger {
+      background: #7f1d1d;
+      color: white;
+    }
+
+    .small {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 1250px;
+      background: rgba(2, 6, 23, .65);
+    }
+
+    th, td {
+      padding: 11px 10px;
+      border-bottom: 1px solid #1e293b;
+      text-align: left;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    th {
+      color: #cbd5e1;
+      background: #0f172a;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    td {
+      color: #e2e8f0;
+    }
+
+    tr:hover td {
+      background: rgba(30, 41, 59, .55);
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 5px 9px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 12px;
+    }
+
+    .over { background: rgba(34,197,94,.15); color: #86efac; border: 1px solid rgba(34,197,94,.35); }
+    .under { background: rgba(239,68,68,.15); color: #fecaca; border: 1px solid rgba(239,68,68,.35); }
+    .pass { background: rgba(148,163,184,.14); color: #cbd5e1; border: 1px solid rgba(148,163,184,.3); }
+    .high { color: #86efac; font-weight: 700; }
+    .medium { color: #fde68a; font-weight: 700; }
+    .low { color: #cbd5e1; font-weight: 700; }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: 1fr 160px 160px 160px;
+      gap: 10px;
+      margin-bottom: 12px;
+      align-items: end;
+    }
+
+    .statcards {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .stat {
+      background: rgba(15, 23, 42, .85);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 13px;
+    }
+
+    .stat .num {
+      font-size: 22px;
+      font-weight: 800;
+    }
+
+    .stat .lab {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 2px;
+    }
+
+    .note {
+      margin-top: 14px;
+      background: rgba(250, 204, 21, .08);
+      border: 1px solid rgba(250, 204, 21, .25);
+      color: #fde68a;
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    @media (max-width: 950px) {
+      .grid { grid-template-columns: 1fr; }
+      .toolbar { grid-template-columns: 1fr 1fr; }
+      .statcards { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>NFL Passing Yards Edge Finder</h1>
+    <div class="subtitle">
+      Enter QB passing-yard props and basic stats. The model projects yards, estimates over/under hit probability, calculates EV from American odds, and gives a best-bet/confidence tag.
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2 style="margin-top:0;">Add Passing Prop</h2>
+
+        <label>Quarterback</label>
+        <input id="player" placeholder="Patrick Mahomes" />
+
+        <div class="row2">
+          <div>
+            <label>Team</label>
+            <input id="team" placeholder="KC" />
+          </div>
+          <div>
+            <label>Opponent</label>
+            <input id="opp" placeholder="DEN" />
+          </div>
+        </div>
+
+        <div class="row3">
+          <div>
+            <label>Line</label>
+            <input id="line" type="number" step="0.5" placeholder="255.5" />
+          </div>
+          <div>
+            <label>Over Odds</label>
+            <input id="overOdds" type="number" placeholder="-115" />
+          </div>
+          <div>
+            <label>Under Odds</label>
+            <input id="underOdds" type="number" placeholder="-105" />
+          </div>
+        </div>
+
+        <div class="row2">
+          <div>
+            <label>Last 5 Avg Pass Yds</label>
+            <input id="last5" type="number" step="0.1" placeholder="262.4" />
+          </div>
+          <div>
+            <label>Last 10 Avg Pass Yds</label>
+            <input id="last10" type="number" step="0.1" placeholder="251.7" />
+          </div>
+        </div>
+
+        <div class="row2">
+          <div>
+            <label>Season Avg Pass Yds</label>
+            <input id="seasonAvg" type="number" step="0.1" placeholder="248.3" />
+          </div>
+          <div>
+            <label>Projected Attempts</label>
+            <input id="projAtt" type="number" step="0.1" placeholder="35.5" />
+          </div>
+        </div>
+
+        <div class="row2">
+          <div>
+            <label>QB Yards/Attempt</label>
+            <input id="ypa" type="number" step="0.01" placeholder="7.3" />
+          </div>
+          <div>
+            <label>Opp Pass Yds Allowed/G</label>
+            <input id="oppPassAllowed" type="number" step="0.1" placeholder="232.0" />
+          </div>
+        </div>
+
+        <div class="row2">
+          <div>
+            <label>Spread from QB Team View</label>
+            <input id="spread" type="number" step="0.5" placeholder="-3.5" />
+          </div>
+          <div>
+            <label>Game Total</label>
+            <input id="total" type="number" step="0.5" placeholder="47.5" />
+          </div>
+        </div>
+
+        <div class="row2">
+          <div>
+            <label>Weather / Dome</label>
+            <select id="weather">
+              <option value="neutral">Neutral / Unknown</option>
+              <option value="dome">Dome / Great Weather</option>
+              <option value="bad">Bad Weather</option>
+            </select>
+          </div>
+          <div>
+            <label>Manual Adjustment</label>
+            <input id="manualAdj" type="number" step="1" value="0" />
+          </div>
+        </div>
+
+        <button class="primary" onclick="addProp()">Add Prop</button>
+        <button class="secondary" onclick="loadExamples()">Load Example Props</button>
+        <button class="danger" onclick="clearAll()">Clear All</button>
+
+        <div class="note">
+          This is a first-version model. It is useful for ranking props, not blindly betting. Best use: compare the model projection to the sportsbook line and only play positive-EV edges.
+        </div>
+      </div>
+
+      <div>
+        <div class="statcards">
+          <div class="stat">
+            <div class="num" id="numProps">0</div>
+            <div class="lab">Props Loaded</div>
+          </div>
+          <div class="stat">
+            <div class="num" id="numBets">0</div>
+            <div class="lab">Playable Bets</div>
+          </div>
+          <div class="stat">
+            <div class="num" id="bestEdge">—</div>
+            <div class="lab">Best Edge</div>
+          </div>
+          <div class="stat">
+            <div class="num" id="avgEV">—</div>
+            <div class="lab">Avg EV / $100</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="toolbar">
+            <div>
+              <label>Search</label>
+              <input id="search" placeholder="Search QB/team/opponent" oninput="render()" />
+            </div>
+            <div>
+              <label>Min Edge %</label>
+              <input id="minEdge" type="number" value="0" step="0.1" oninput="render()" />
+            </div>
+            <div>
+              <label>Best Bet Filter</label>
+              <select id="betFilter" onchange="render()">
+                <option value="all">All</option>
+                <option value="over">Over only</option>
+                <option value="under">Under only</option>
+                <option value="play">Playable only</option>
+              </select>
+            </div>
+            <div>
+              <label>Export</label>
+              <button class="secondary" onclick="exportCSV()" style="margin-top:0;">Download CSV</button>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th onclick="sortBy('player')">QB</th>
+                  <th onclick="sortBy('team')">Team</th>
+                  <th onclick="sortBy('opp')">Opp</th>
+                  <th onclick="sortBy('line')">Line</th>
+                  <th onclick="sortBy('overOdds')">O Odds</th>
+                  <th onclick="sortBy('underOdds')">U Odds</th>
+                  <th onclick="sortBy('projYds')">Proj Yds</th>
+                  <th onclick="sortBy('diff')">Diff</th>
+                  <th onclick="sortBy('overProb')">Over %</th>
+                  <th onclick="sortBy('underProb')">Under %</th>
+                  <th onclick="sortBy('overEV')">Over EV/$100</th>
+                  <th onclick="sortBy('underEV')">Under EV/$100</th>
+                  <th onclick="sortBy('edge')">Edge</th>
+                  <th onclick="sortBy('bestBet')">Best Bet</th>
+                  <th onclick="sortBy('confidence')">Confidence</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="tbody"></tbody>
+            </table>
+          </div>
+
+          <p class="small">
+            Formula: projected yards blends recent average, season average, projected attempts × YPA, opponent pass defense, game environment, spread, weather, and manual adjustment.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  let props = JSON.parse(localStorage.getItem("nflPassingProps") || "[]");
+  let sortKey = "edge";
+  let sortDir = -1;
+
+  function num(id) {
+    const v = parseFloat(document.getElementById(id).value);
+    return Number.isFinite(v) ? v : 0;
+  }
+
+  function text(id) {
+    return document.getElementById(id).value.trim();
+  }
+
+  function americanToDecimal(odds) {
+    odds = Number(odds);
+    if (!Number.isFinite(odds) || odds === 0) return 1;
+    return odds > 0 ? 1 + odds / 100 : 1 + 100 / Math.abs(odds);
+  }
+
+  function impliedProb(odds) {
+    odds = Number(odds);
+    if (odds > 0) return 100 / (odds + 100);
+    return Math.abs(odds) / (Math.abs(odds) + 100);
+  }
+
+  function evPer100(prob, odds) {
+    const dec = americanToDecimal(odds);
+    const profit = (dec - 1) * 100;
+    return (prob * profit) - ((1 - prob) * 100);
+  }
+
+  function normalCDF(x) {
+    // Abramowitz and Stegun approximation
+    const sign = x < 0 ? -1 : 1;
+    x = Math.abs(x) / Math.sqrt(2);
+    const a1 = 0.254829592;
+    const a2 = -0.284496736;
+    const a3 = 1.421413741;
+    const a4 = -1.453152027;
+    const a5 = 1.061405429;
+    const p = 0.3275911;
+    const t = 1 / (1 + p * x);
+    const y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+    return 0.5 * (1 + sign * y);
+  }
+
+  function calculate(p) {
+    const attemptsModel = p.projAtt * p.ypa;
+
+    let oppAdj = 0;
+    if (p.oppPassAllowed > 0) {
+      oppAdj = (p.oppPassAllowed - 220) * 0.18;
+    }
+
+    let totalAdj = 0;
+    if (p.total > 0) {
+      totalAdj = (p.total - 44) * 1.5;
+    }
+
+    // Positive spread means QB's team is underdog, usually more passing.
+    let spreadAdj = p.spread * 2.0;
+
+    let weatherAdj = 0;
+    if (p.weather === "dome") weatherAdj = 5;
+    if (p.weather === "bad") weatherAdj = -12;
+
+    const recent = p.last5 || p.last10 || p.seasonAvg || attemptsModel;
+    const ten = p.last10 || p.last5 || p.seasonAvg || attemptsModel;
+    const season = p.seasonAvg || p.last10 || p.last5 || attemptsModel;
+
+    const baseProjection =
+      (recent * 0.25) +
+      (ten * 0.20) +
+      (season * 0.20) +
+      (attemptsModel * 0.25) +
+      ((p.oppPassAllowed || season) * 0.10);
+
+    const projYds = baseProjection + oppAdj + totalAdj + spreadAdj + weatherAdj + p.manualAdj;
+
+    // Passing yards have high variance. SD increases with line and attempts.
+    const sd = Math.max(35, 28 + (p.projAtt * 0.75) + (p.line * 0.035));
+    const z = (p.line + 0.5 - projYds) / sd;
+    const underProb = normalCDF(z);
+    const overProb = 1 - underProb;
+
+    const overEV = evPer100(overProb, p.overOdds);
+    const underEV = evPer100(underProb, p.underOdds);
+
+    const overEdge = overProb - impliedProb(p.overOdds);
+    const underEdge = underProb - impliedProb(p.underOdds);
+
+    let bestBet = "Pass";
+    let bestEV = Math.max(overEV, underEV);
+    let edge = Math.max(overEdge, underEdge);
+
+    if (bestEV > 0 && edge > 0.015) {
+      bestBet = overEV >= underEV ? "Over" : "Under";
+    } else {
+      edge = Math.max(overEdge, underEdge);
+    }
+
+    let confidence = "Low";
+    if (bestBet !== "Pass" && edge >= 0.06 && Math.abs(projYds - p.line) >= 18) confidence = "High";
+    else if (bestBet !== "Pass" && edge >= 0.035 && Math.abs(projYds - p.line) >= 10) confidence = "Medium";
+
+    return {
+      ...p,
+      projYds,
+      diff: projYds - p.line,
+      overProb,
+      underProb,
+      overEV,
+      underEV,
+      overEdge,
+      underEdge,
+      edge,
+      bestBet,
+      confidence
+    };
+  }
+
+  function addProp() {
+    const p = {
+      id: Date.now(),
+      player: text("player"),
+      team: text("team").toUpperCase(),
+      opp: text("opp").toUpperCase(),
+      line: num("line"),
+      overOdds: num("overOdds"),
+      underOdds: num("underOdds"),
+      last5: num("last5"),
+      last10: num("last10"),
+      seasonAvg: num("seasonAvg"),
+      projAtt: num("projAtt"),
+      ypa: num("ypa"),
+      oppPassAllowed: num("oppPassAllowed"),
+      spread: num("spread"),
+      total: num("total"),
+      weather: document.getElementById("weather").value,
+      manualAdj: num("manualAdj")
+    };
+
+    if (!p.player || !p.line || !p.overOdds || !p.underOdds) {
+      alert("Enter at least QB, line, over odds, and under odds.");
+      return;
+    }
+
+    props.push(p);
+    save();
+    render();
+  }
+
+  function save() {
+    localStorage.setItem("nflPassingProps", JSON.stringify(props));
+  }
+
+  function deleteProp(id) {
+    props = props.filter(p => p.id !== id);
+    save();
+    render();
+  }
+
+  function clearAll() {
+    if (confirm("Clear all props?")) {
+      props = [];
+      save();
+      render();
+    }
+  }
+
+  function sortBy(key) {
+    if (sortKey === key) sortDir *= -1;
+    else {
+      sortKey = key;
+      sortDir = -1;
+    }
+    render();
+  }
+
+  function pct(x) {
+    return (x * 100).toFixed(1) + "%";
+  }
+
+  function money(x) {
+    return (x >= 0 ? "+" : "") + "$" + x.toFixed(2);
+  }
+
+  function render() {
+    const search = document.getElementById("search").value.toLowerCase();
+    const minEdge = parseFloat(document.getElementById("minEdge").value) || 0;
+    const filter = document.getElementById("betFilter").value;
+
+    let rows = props.map(calculate);
+
+    rows = rows.filter(r => {
+      const hay = `${r.player} ${r.team} ${r.opp}`.toLowerCase();
+      if (search && !hay.includes(search)) return false;
+      if ((r.edge * 100) < minEdge) return false;
+      if (filter === "over" && r.bestBet !== "Over") return false;
+      if (filter === "under" && r.bestBet !== "Under") return false;
+      if (filter === "play" && r.bestBet === "Pass") return false;
+      return true;
+    });
+
+    rows.sort((a, b) => {
+      const av = a[sortKey];
+      const bv = b[sortKey];
+      if (typeof av === "string") return av.localeCompare(bv) * sortDir;
+      return (av - bv) * sortDir;
+    });
+
+    const tbody = document.getElementById("tbody");
+    tbody.innerHTML = "";
+
+    rows.forEach(r => {
+      const cls = r.bestBet === "Over" ? "over" : r.bestBet === "Under" ? "under" : "pass";
+      const confCls = r.confidence.toLowerCase();
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td><strong>${r.player}</strong></td>
+        <td>${r.team}</td>
+        <td>${r.opp}</td>
+        <td>${r.line.toFixed(1)}</td>
+        <td>${r.overOdds > 0 ? "+" + r.overOdds : r.overOdds}</td>
+        <td>${r.underOdds > 0 ? "+" + r.underOdds : r.underOdds}</td>
+        <td>${r.projYds.toFixed(1)}</td>
+        <td>${r.diff >= 0 ? "+" : ""}${r.diff.toFixed(1)}</td>
+        <td>${pct(r.overProb)}</td>
+        <td>${pct(r.underProb)}</td>
+        <td>${money(r.overEV)}</td>
+        <td>${money(r.underEV)}</td>
+        <td>${pct(r.edge)}</td>
+        <td><span class="pill ${cls}">${r.bestBet}</span></td>
+        <td><span class="${confCls}">${r.confidence}</span></td>
+        <td><button class="danger" onclick="deleteProp(${r.id})" style="padding:6px 9px;margin:0;">X</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    const allCalc = props.map(calculate);
+    const playable = allCalc.filter(r => r.bestBet !== "Pass");
+    document.getElementById("numProps").textContent = props.length;
+    document.getElementById("numBets").textContent = playable.length;
+    document.getElementById("bestEdge").textContent = allCalc.length ? pct(Math.max(...allCalc.map(r => r.edge))) : "—";
+    document.getElementById("avgEV").textContent = playable.length
+      ? money(playable.reduce((s, r) => s + Math.max(r.overEV, r.underEV), 0) / playable.length)
+      : "—";
+  }
+
+  function exportCSV() {
+    const rows = props.map(calculate);
+    const headers = ["QB","Team","Opp","Line","Over Odds","Under Odds","Proj Yds","Diff","Over %","Under %","Over EV/$100","Under EV/$100","Edge","Best Bet","Confidence"];
+    const csvRows = [headers.join(",")];
+
+    rows.forEach(r => {
+      csvRows.push([
+        r.player, r.team, r.opp, r.line, r.overOdds, r.underOdds,
+        r.projYds.toFixed(1), r.diff.toFixed(1), pct(r.overProb),
+        pct(r.underProb), r.overEV.toFixed(2), r.underEV.toFixed(2),
+        pct(r.edge), r.bestBet, r.confidence
+      ].map(v => `"${String(v).replaceAll('"','""')}"`).join(","));
+    });
+
+    const blob = new Blob([csvRows.join("\n")], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "nfl-passing-yards-edges.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function loadExamples() {
+    const examples = [
+      {
+        id: Date.now() + 1,
+        player: "Patrick Mahomes",
+        team: "KC",
+        opp: "DEN",
+        line: 255.5,
+        overOdds: -115,
+        underOdds: -105,
+        last5: 264.2,
+        last10: 251.8,
+        seasonAvg: 247.4,
+        projAtt: 36.5,
+        ypa: 7.1,
+        oppPassAllowed: 238.5,
+        spread: -3.5,
+        total: 47.5,
+        weather: "neutral",
+        manualAdj: 0
+      },
+      {
+        id: Date.now() + 2,
+        player: "Josh Allen",
+        team: "BUF",
+        opp: "MIA",
+        line: 242.5,
+        overOdds: -110,
+        underOdds: -110,
+        last5: 235.6,
+        last10: 246.1,
+        seasonAvg: 253.7,
+        projAtt: 33.5,
+        ypa: 7.6,
+        oppPassAllowed: 246.0,
+        spread: -2.5,
+        total: 49.5,
+        weather: "neutral",
+        manualAdj: 0
+      },
+      {
+        id: Date.now() + 3,
+        player: "Jared Goff",
+        team: "DET",
+        opp: "GB",
+        line: 259.5,
+        overOdds: +100,
+        underOdds: -120,
+        last5: 272.8,
+        last10: 266.2,
+        seasonAvg: 258.9,
+        projAtt: 34.5,
+        ypa: 7.8,
+        oppPassAllowed: 224.0,
+        spread: -1.5,
+        total: 51.0,
+        weather: "dome",
+        manualAdj: 0
+      }
+    ];
+
+    props = [...props, ...examples];
+    save();
+    render();
+  }
+
+  render();
+</script>
+</body>
+</html>
